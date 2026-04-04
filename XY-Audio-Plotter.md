@@ -88,9 +88,24 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 - Test signal levels and adjust gain/PC volume for best dynamic range
 - Add features: persistence/fading, trigger, scale, grid options
 
+## Build Log
+
+### April 2026
+- Pi Zero 1 (original, **no WiFi**) and STM32 Blue Pill soldered to prototype board
+- 3.3V power connected between boards
+- Arduino IDE configured with STM32duino core 2.12.0 for Blue Pill firmware
+- Raspberry Pi OS Lite 32-bit (Bookworm) flashed to SD card
+- `config.txt` configured: 1024×768 HDMI, SPI enabled, TH WiFi region
+- Pi access method: keyboard + HDMI + micro USB OTG adapter (no WiFi on this board)
+- SD card bootfs access on Windows: assign drive letter via Disk Management
+
+### Notes
+- Pi Zero (no W) has no WiFi — all setup and deployment must be done via direct HDMI/keyboard or by editing SD card on PC
+- STM32 SPI slave sketch uses direct register setup (STM32duino SPI slave API unreliable) — see `STM_FIRMWARE/`
+
 ---
 
-**Project Status**: Planning & Design Phase  
+**Project Status**: Active Build  
 **Last Updated**: April 2026
 
 This document contains all key decisions and specifications discussed so far. Feel free to expand it with code snippets, schematics, or test results as you build.
