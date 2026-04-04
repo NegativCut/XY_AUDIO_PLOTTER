@@ -1,0 +1,16 @@
+# Basic Pi Zero 1 config
+disable_overscan=1
+hdmi_force_hotplug=1
+hdmi_group=2
+hdmi_mode=16
+
+# Enable SPI
+dtparam=spi=on
+
+# Enable audio
+dtparam=audio=on
+
+# WiFi country code
+country=TH
+
+[all]
