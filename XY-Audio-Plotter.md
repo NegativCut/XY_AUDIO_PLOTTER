@@ -98,6 +98,18 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 - `config.txt` configured: 1024×768 HDMI, SPI enabled, TH WiFi region
 - Pi access method: keyboard + HDMI + micro USB OTG adapter (no WiFi on this board)
 - SD card bootfs access on Windows: assign drive letter via Disk Management
+- ENC28J60 LAN module (Hanrun HR911105A RJ45) wired to SPI0: CE0 (GPIO 8) for CS, GPIO 25 (NT) for INT, CLK for SCK, RST tied to 3.3V; 12 MHz
+- Blue Pill on CE1 (GPIO 7), shares CLK/MOSI/MISO with ENC28J60
+- `enc28j60` kernel driver loaded and chip found; first module had a knocked-off inductor (no physical link) — replaced with working module
+- Pi assigned 192.168.0.100 static lease; SSH access confirmed
+- Pi OS updated via `apt update && apt upgrade`
+- ENC28J60 MAC fixed to `b8:27:eb:00:00:01` via udev rule (overlay `mac-address` param not supported)
+- `vc4-fkms-v3d` overlay enabled for framebuffer access (Pi Zero); Pi 3B uses default `vc4-kms-v3d` with `disable_fw_kms_setup=1` commented out
+- Pi 3B framebuffer is 32-bit ARGB8888 — visualiser updated from RGB565 uint16 to ARGB8888 uint32
+- Animated Lissajous visualiser running at 24 FPS, ~14ms frame time on Pi 3B
+- Framebuffer direct write approach used (no Pygame/GPU dependency)
+- SD card: 16 GB, 12.2 GB available after OS update; filesystem expanded to fill card via `raspi-config --expand-rootfs`
+- `python3-pygame` installed via apt
 
 ### Notes
 - Pi Zero (no W) has no WiFi — all setup and deployment must be done via direct HDMI/keyboard or by editing SD card on PC

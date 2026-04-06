@@ -1,0 +1,1 @@
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="enc28j60", RUN+="/sbin/ip link set dev %k address b8:27:eb:00:00:01"
