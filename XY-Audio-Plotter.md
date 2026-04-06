@@ -82,11 +82,31 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 
 ## Next Steps / TODO
 
-- Build analog passthrough + MCP6022 board
-- Implement STM32 dual ADC + DMA + SPI slave DMA TX
-- Implement Pi Zero Pygame exact 24 FPS receiver + Lissajous renderer
-- Test signal levels and adjust gain/PC volume for best dynamic range
-- Add features: persistence/fading, trigger, scale, grid options
+### Rendering
+1. Replace numpy point/line drawing with OpenVG hardware-accelerated rendering
+2. Implement proper line segments (not upsampled dots)
+3. Re-add outer glow layer (removed for performance — pending OpenVG)
+4. Verify full 1024×768 screen usage with new renderer
+
+### Performance
+5. Remove FPS counter print once rendering is confirmed smooth
+6. Verify 24 FPS maintained with real SPI data
+
+### SPI / Data
+7. Wire Blue Pill to SPI CE1 and verify loopback test sketch works
+8. Implement STM32 dual ADC + DMA firmware
+9. Implement STM32 SPI slave DMA TX (send XY buffers every ~41ms)
+10. Replace dummy Lissajous data with live SPI reads from Blue Pill
+
+### Analog Front-End
+11. Build MCP6022 buffering/biasing/gain circuit
+12. Test signal levels and adjust gain/PC volume for best dynamic range
+
+### Polish
+13. Auto-start visualiser on boot
+14. Clean up config.txt (remove unused lines)
+15. Update setup.sh to reflect Pi 3B as primary target
+16. Add features: persistence/fading, trigger, scale, grid options
 
 ## Build Log
 
