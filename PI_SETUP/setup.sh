@@ -25,7 +25,7 @@ sudo apt upgrade -y
 
 # --- Install dependencies ---
 echo "[3/7] Installing dependencies..."
-sudo apt install -y python3-numpy
+sudo apt install -y python3-numpy python3-cairo
 
 # --- User groups ---
 echo "[4/7] Adding $USER to video and render groups..."

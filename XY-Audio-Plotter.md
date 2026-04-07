@@ -83,11 +83,11 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 ## Next Steps / TODO
 
 ### Rendering
-1. ~~Replace numpy point/line drawing with OpenVG hardware-accelerated rendering~~ — OpenVG dead end; EGL/GLES2 requires vc4-kms-v3d which breaks display on this monitor
-2. ~~Implement proper line segments~~ — done: vectorised fixed-step interpolation (_N=8 steps/segment), no Python loops, 24 FPS maintained
-3. Re-add glow layer (deferred — get core working first)
-4. ~~Verify full 1024×768 screen usage~~ — done
-5. Add user-adjustable speed control (phase increment `t += 0.05`)
+1. ~~Replace numpy point/line drawing with OpenVG~~ — dead end; replaced with Cairo
+2. ~~Implement proper line segments~~ — done via Cairo anti-aliased stroke
+3. ~~Verify full 1024×768 screen usage~~ — done
+4. Add user-adjustable speed control (phase increment `t += 0.05`)
+5. Adaptive display — detect dominant frequency and adjust sample window/zoom so the figure looks good across 20Hz–20kHz
 
 ### Performance
 5. Remove FPS counter print once rendering is confirmed smooth
@@ -108,6 +108,7 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 14. Clean up config.txt (remove unused lines)
 15. Update setup.sh to reflect Pi 3B as primary target
 16. Add features: persistence/fading, trigger, scale, grid options
+17. Rotary encoder controls: Speed, Brightness, Persistence, Focus (trace sharpness/glow)
 
 ## Build Log
 
@@ -131,6 +132,9 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 - Framebuffer direct write approach used (no Pygame/GPU dependency)
 - Vectorised fixed-step line interpolation implemented — smooth continuous trace, no gaps
 - EGL/GLES2 GPU path investigated but blocked: vc4-kms-v3d incompatible with monitor
+- Cairo (pycairo 1.27.0) adopted as renderer: anti-aliased lines, 24 FPS at ~27ms worst case
+- CRT effects implemented via Cairo: focus (line width), persistence (alpha fade), brightness
+- `python3-cairo` added to setup.sh dependencies
 - SD card: 16 GB, 12.2 GB available after OS update; filesystem expanded to fill card via `raspi-config --expand-rootfs`
 - `python3-pygame` installed via apt
 

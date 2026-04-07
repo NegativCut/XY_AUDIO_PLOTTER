@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# XY Audio Lissajous visualiser — Cairo renderer
-# Direct framebuffer output, no display server required
+# CRT effects demo — Cairo renderer
+# Cycles: sharp/no-trail → soft-beam/long-trail
 
 import cairo
 import numpy as np
@@ -12,7 +12,7 @@ WIDTH, HEIGHT = 1024, 768
 FPS = 24
 SAMPLES = 1024
 FB = '/dev/fb0'
-SPEED = 0.05  # phase increment per frame
+RAMP_SECS = 5  # seconds per ramp (up then down)
 
 def generate_lissajous(t, a=1, b=2):
     angles = np.linspace(0, 2 * math.pi, SAMPLES)
@@ -22,10 +22,21 @@ def generate_lissajous(t, a=1, b=2):
     py = (y + 1) / 2 * (HEIGHT - 1)
     return px, py
 
-def draw_trace(ctx, px, py):
+def draw_path(ctx, px, py):
     ctx.move_to(px[0], py[0])
     for i in range(1, len(px)):
         ctx.line_to(px[i], py[i])
+
+def render_frame(ctx, px, py, brightness, focus, persistence):
+    # Persistence: fade existing content with semi-transparent black
+    ctx.set_operator(cairo.OPERATOR_OVER)
+    ctx.set_source_rgba(0, 0, 0, 1.0 - persistence)
+    ctx.paint()
+
+    # Core trace
+    draw_path(ctx, px, py)
+    ctx.set_source_rgba(0, brightness, 0, 1.0)
+    ctx.set_line_width(1.5 + focus * 6)
     ctx.stroke()
 
 def main():
@@ -43,12 +54,17 @@ def main():
     ctx.set_antialias(cairo.ANTIALIAS_GOOD)
     ctx.set_line_cap(cairo.LINE_CAP_ROUND)
     ctx.set_line_join(cairo.LINE_JOIN_ROUND)
-    ctx.set_line_width(1.5)
-    ctx.set_source_rgba(0, 1, 0, 1)
+
+    # Initial clear
+    ctx.set_operator(cairo.OPERATOR_CLEAR)
+    ctx.paint()
 
     blank = bytes(HEIGHT * WIDTH * 4)
     t = 0.0
     interval = 1.0 / FPS
+    ramp_frames = int(RAMP_SECS * FPS)
+    total_phase_frames = ramp_frames * 2
+    phase_frame = 0
     frame_count = 0
     fps_timer = time.perf_counter()
 
@@ -56,23 +72,28 @@ def main():
         while True:
             t0 = time.perf_counter()
 
-            ctx.set_operator(cairo.OPERATOR_CLEAR)
-            ctx.paint()
-            ctx.set_operator(cairo.OPERATOR_OVER)
-            ctx.set_source_rgba(0, 1, 0, 1)
+            # Ramp 0→1→0
+            ramp = phase_frame / ramp_frames if phase_frame < ramp_frames \
+                   else 2.0 - phase_frame / ramp_frames
+            ramp = max(0.0, min(1.0, ramp))
+
+            brightness  = 1.0
+            focus       = ramp
+            persistence = ramp * 0.93
 
             px, py = generate_lissajous(t)
-            draw_trace(ctx, px, py)
+            render_frame(ctx, px, py, brightness, focus, persistence)
 
             fb.seek(0)
             fb.write(surface.get_data())
             fb.flush()
 
-            t += SPEED
+            t += 0.05
+            phase_frame = (phase_frame + 1) % total_phase_frames
             frame_count += 1
             elapsed = time.perf_counter() - t0
             if time.perf_counter() - fps_timer >= 1.0:
-                print(f"FPS: {frame_count}  frame time: {elapsed*1000:.1f}ms")  # remove after benchmarking
+                print(f"FPS: {frame_count}  frame time: {elapsed*1000:.1f}ms  focus: {focus:.2f}  persistence: {persistence:.2f}")
                 frame_count = 0
                 fps_timer = time.perf_counter()
 
