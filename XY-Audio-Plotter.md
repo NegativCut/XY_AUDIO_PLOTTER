@@ -83,10 +83,11 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 ## Next Steps / TODO
 
 ### Rendering
-1. Replace numpy point/line drawing with OpenVG hardware-accelerated rendering
-2. Implement proper line segments (not upsampled dots)
-3. Re-add outer glow layer (removed for performance — pending OpenVG)
-4. Verify full 1024×768 screen usage with new renderer
+1. ~~Replace numpy point/line drawing with OpenVG hardware-accelerated rendering~~ — OpenVG dead end; EGL/GLES2 requires vc4-kms-v3d which breaks display on this monitor
+2. ~~Implement proper line segments~~ — done: vectorised fixed-step interpolation (_N=8 steps/segment), no Python loops, 24 FPS maintained
+3. Re-add glow layer (deferred — get core working first)
+4. ~~Verify full 1024×768 screen usage~~ — done
+5. Add user-adjustable speed control (phase increment `t += 0.05`)
 
 ### Performance
 5. Remove FPS counter print once rendering is confirmed smooth
@@ -128,6 +129,8 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 - Pi 3B framebuffer is 32-bit ARGB8888 — visualiser updated from RGB565 uint16 to ARGB8888 uint32
 - Animated Lissajous visualiser running at 24 FPS, ~14ms frame time on Pi 3B
 - Framebuffer direct write approach used (no Pygame/GPU dependency)
+- Vectorised fixed-step line interpolation implemented — smooth continuous trace, no gaps
+- EGL/GLES2 GPU path investigated but blocked: vc4-kms-v3d incompatible with monitor
 - SD card: 16 GB, 12.2 GB available after OS update; filesystem expanded to fill card via `raspi-config --expand-rootfs`
 - `python3-pygame` installed via apt
 

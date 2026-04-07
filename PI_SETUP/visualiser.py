@@ -15,12 +15,6 @@ def rgb32(r, g, b):
 
 BLACK = rgb32(0, 0, 0)
 CORE  = rgb32(0, 255, 0)
-GLOW1 = rgb32(0, 120, 0)
-GLOW2 = rgb32(0, 40, 0)
-
-# Pre-compute offset lists
-_OFFSETS_GLOW = [(dx, dy) for dx in range(-3, 4) for dy in range(-3, 4) if 2 < (dx**2+dy**2)**0.5 <= 4]
-_OFFSETS_MID  = [(dx, dy) for dx in range(-1, 2) for dy in range(-1, 2)]
 
 def generate_lissajous(t, a=1, b=2):
     angles = np.linspace(0, 2 * math.pi, SAMPLES)
@@ -30,23 +24,16 @@ def generate_lissajous(t, a=1, b=2):
     py = ((y + 1) / 2 * (HEIGHT - 1)).astype(int)
     return px, py
 
+_N = 8  # interpolation steps per segment
+_T = np.linspace(0, 1, _N, endpoint=False)
+
 def draw_trace(frame, px, py):
-    # Upsample trace to fill gaps between points — fully vectorised
-    n_orig = len(px)
-    n_up = n_orig * 4  # 4x upsample closes gaps at curve edges
-    t_orig = np.arange(n_orig)
-    t_up   = np.linspace(0, n_orig - 1, n_up)
-    ux = np.interp(t_up, t_orig, px).astype(np.int32)
-    uy = np.interp(t_up, t_orig, py).astype(np.int32)
+    # Vectorised fixed-step line interpolation — no Python loops
+    ix = (px[:-1, None] + _T[None, :] * (px[1:] - px[:-1])[:, None]).astype(np.int32).ravel()
+    iy = (py[:-1, None] + _T[None, :] * (py[1:] - py[:-1])[:, None]).astype(np.int32).ravel()
 
-    mask = (ux >= 0) & (ux < WIDTH) & (uy >= 0) & (uy < HEIGHT)
-    frame[uy[mask], ux[mask]] = GLOW1
-
-    # Core with 1px thickness
-    for dx, dy in [(-1,0),(1,0),(0,-1),(0,1),(0,0)]:
-        cx, cy = ux + dx, uy + dy
-        m = (cx >= 0) & (cx < WIDTH) & (cy >= 0) & (cy < HEIGHT)
-        frame[cy[m], cx[m]] = CORE
+    mask = (ix >= 0) & (ix < WIDTH) & (iy >= 0) & (iy < HEIGHT)
+    frame[iy[mask], ix[mask]] = CORE
 
 def main():
     try:
