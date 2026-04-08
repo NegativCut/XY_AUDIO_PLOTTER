@@ -149,6 +149,8 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 - Pi SPI reader written (`PI_SETUP/spi_xy_read.py`): reads 4096 bytes from CE0, decodes to XY float arrays for visualiser
 - Analog front-end design reviewed: gain corrected to **1.68×** (Rf=6.8 kΩ, Rg=10 kΩ) for 3.3 V single supply — original 4× gain would clip on positive half with ±1 V line-out
 - Component list confirmed: 2× 100 nF input coupling caps, 2× 680 Ω series resistors, shared 10k/10k bias divider + 100 nF decoupling, 100 nF MCP6022 supply decoupling, 2× 100 Ω output resistors to STM32 ADC
+- Pi 3B eth0 static IP set to 192.168.0.100 via NetworkManager; MAC b8:27:eb:53:fc:5a fixed in hardware — assigned static lease on router
+- SPI link test sketches written: `STM_FIRMWARE/spi_loopback_ce0/` (Blue Pill) + `PI_SETUP/spi_link_test.py` (Pi); test file transferred to Pi
 
 ### Notes
 - STM32 SPI slave sketch uses direct register setup (STM32duino SPI slave API unreliable) — see `STM_FIRMWARE/`
