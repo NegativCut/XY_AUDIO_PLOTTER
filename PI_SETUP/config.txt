@@ -7,9 +7,6 @@ hdmi_mode=17
 # Enable SPI
 dtparam=spi=on
 
-# ENC28J60 LAN module on SPI0 CE0, INT on GPIO 25
-dtoverlay=enc28j60,cs=0,int_pin=25,speed=12000000
-
 # Enable audio
 dtparam=audio=on
 

@@ -5,10 +5,10 @@ X = Left channel, Y = Right channel
 
 ## Project Constraints (Hard Requirements)
 
-- **Display board**: Raspberry Pi Zero (1st generation, single-core 1 GHz)
+- **Display board**: Raspberry Pi 3B
 - **Display output**: HDMI at 1024×768 resolution
 - **Refresh rate**: **Exactly 24 FPS** (not higher, not lower)
-- **Communication**: SPI at **exactly 16 MHz** (Pi Zero = Master, STM32 = Slave)
+- **Communication**: SPI at **exactly 16 MHz** (Pi 3B = Master, STM32 = Slave)
 - **Wiring length**: Maximum **5 cm**
 - **Acquisition**: Offloaded to STM32F103 (Blue Pill)
 - **Audio**: Stereo passthrough (PC line-out → external amp) + sampling for XY plotting
@@ -21,21 +21,28 @@ X = Left channel, Y = Right channel
 - **Light tap** (680 Ω recommended) from input → MCP6022 buffering + biasing + gain
 - **MCP6022** → biased & amplified signal to STM32F103 ADCs
 - **STM32F103 (Blue Pill)**: Dual simultaneous ADC + DMA → prepares XY sample buffers → sends via 16 MHz SPI slave
-- **Raspberry Pi Zero**: Receives buffers via spidev → draws Lissajous patterns at exactly 24 FPS using Pygame
+- **Raspberry Pi 3B**: Receives buffers via spidev → draws Lissajous patterns at exactly 24 FPS using Cairo
 
 ## Analog Front-End (MCP6022)
 
-**Recommended gain**: **4×** (sweet spot for typical PC line-out ~1–2 Vpp)
+**Gain**: **~1.65×** — maximum for 3.3 V single supply without clipping on ±1 V line-out
+
+On a 3.3 V single supply with 1.65 V bias, the output can only swing ±1.65 V. PC line-out is ±1 V, so max linear gain = 1.65 V / 1 V = 1.65×. Higher gain clips the positive half.
 
 **Circuit per channel (Left & Right)**:
-- Input coupling capacitor: 100 nF
-- Bias: 10 kΩ / 10 kΩ divider from 3.3 V → 1.65 V (decoupled with 100 nF)
-- Tap resistor from audio input: **680 Ω**
+- Input coupling capacitor: **100 nF** (blocks PC DC offset)
+- Tap resistor from audio input: **680 Ω** in series to non-inverting input
+- Bias: shared **10 kΩ / 10 kΩ** divider from 3.3 V → 1.65 V, connected between 680 Ω and non-inverting input; decoupled with **100 nF** to GND
 - Non-inverting amplifier:
-  - Rf (feedback) = **15 kΩ** + **12 nF** parallel (≈30 kHz low-pass)
-  - Rg (to GND) = **4.7 kΩ**
-  - Gain ≈ 4.19×
-- Output: 100 Ω series resistor → STM32 ADC pin
+  - Rf (feedback) = **6.8 kΩ**
+  - Rg (to GND) = **10 kΩ**
+  - Gain = 1 + (6.8 / 10) = **1.68×**
+- Output: **100 Ω** series resistor → STM32 ADC pin (current limiting / damp oscillation on capacitive ADC input)
+
+**Decoupling**:
+- 100 nF on MCP6022 supply pin to GND
+
+**Passthrough**: purely passive — input jack wired directly to output jack, no active components in signal path
 
 **ADC pin assignment** (for dual simultaneous mode):
 - Left (X) → PA0 (ADC1 Channel 0)
@@ -53,23 +60,22 @@ X = Left channel, Y = Right channel
 - 1024 XY pairs (~4.1 KB) — very comfortable at 16 MHz
 - 2048 XY pairs (~8.2 KB) — still fine
 
-## Raspberry Pi Zero Side
+## Raspberry Pi 3B Side
 
 - HDMI forced to 1024×768 @ 60 Hz via `config.txt`
-- `spidev` at exactly 16 MHz, mode 0
-- Pygame with double buffering + partial/dirty rect updates
+- `spidev` at exactly 16 MHz, mode 0, CE0 (GPIO 8)
+- Cairo (pycairo) anti-aliased renderer, direct framebuffer output to `/dev/fb0`
 - Precise timing loop using `time.perf_counter()` + `time.sleep()` to enforce **exactly 24 FPS**
-- Static background (grid + axes) blitted every frame
-- Draw trace with `pygame.draw.lines()` or point plotting for classic Lissajous look
+- CRT effects: focus (line width), persistence (alpha fade), brightness
 
-## Wiring (Pi Zero ↔ Blue Pill, ≤5 cm)
+## Wiring (Pi 3B ↔ Blue Pill, ≤5 cm)
 
-**SPI0 on Pi Zero**:
+**SPI0 on Pi 3B**:
 - GPIO 11 (SCLK) → PA5 (SCK)
 - GPIO 10 (MOSI) → PA7 (MOSI)
 - GPIO 9 (MISO)  → PA6 (MISO)
 - GPIO 8 (CE0)   → PA4 (NSS/CS) or any GPIO
-- Multiple GND wires (strongly recommended)
+- GND
 
 Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16 MHz.
 
@@ -94,7 +100,7 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 6. Verify 24 FPS maintained with real SPI data
 
 ### SPI / Data
-7. Wire Blue Pill to SPI CE1 and verify loopback test sketch works
+7. Wire Blue Pill to SPI CE0 (GPIO 8) and verify loopback test sketch works
 8. Implement STM32 dual ADC + DMA firmware
 9. Implement STM32 SPI slave DMA TX (send XY buffers every ~41ms)
 10. Replace dummy Lissajous data with live SPI reads from Blue Pill
@@ -106,7 +112,7 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 ### Polish
 13. Auto-start visualiser on boot
 14. Clean up config.txt (remove unused lines)
-15. Update setup.sh to reflect Pi 3B as primary target
+15. ~~Update setup.sh to reflect Pi 3B as primary target~~ — done
 16. Add features: persistence/fading, trigger, scale, grid options
 17. Rotary encoder controls: Speed, Brightness, Persistence, Focus (trace sharpness/glow)
 
@@ -137,9 +143,14 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 - `python3-cairo` added to setup.sh dependencies
 - SD card: 16 GB, 12.2 GB available after OS update; filesystem expanded to fill card via `raspi-config --expand-rootfs`
 - `python3-pygame` installed via apt
+- Switched from Pi Zero to **Pi 3B** as primary target — built-in ethernet frees SPI CE0 for Blue Pill; ENC28J60 and udev MAC rule removed
+- `setup.sh` updated for Pi 3B: ENC28J60 overlay removed, embedded visualiser updated to Cairo renderer, `python3-spidev` added to dependencies
+- STM32 dummy XY sketch written (`STM_FIRMWARE/spi_xy_dummy/`): pre-computed animated Lissajous sent via SPI1 slave + DMA, 1024 XY pairs per frame, 4096 bytes big-endian uint16
+- Pi SPI reader written (`PI_SETUP/spi_xy_read.py`): reads 4096 bytes from CE0, decodes to XY float arrays for visualiser
+- Analog front-end design reviewed: gain corrected to **1.68×** (Rf=6.8 kΩ, Rg=10 kΩ) for 3.3 V single supply — original 4× gain would clip on positive half with ±1 V line-out
+- Component list confirmed: 2× 100 nF input coupling caps, 2× 680 Ω series resistors, shared 10k/10k bias divider + 100 nF decoupling, 100 nF MCP6022 supply decoupling, 2× 100 Ω output resistors to STM32 ADC
 
 ### Notes
-- Pi Zero (no W) has no WiFi — all setup and deployment must be done via direct HDMI/keyboard or by editing SD card on PC
 - STM32 SPI slave sketch uses direct register setup (STM32duino SPI slave API unreliable) — see `STM_FIRMWARE/`
 
 ---
