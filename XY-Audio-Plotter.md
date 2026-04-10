@@ -92,29 +92,25 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 1. ~~Replace numpy point/line drawing with OpenVG~~ — dead end; replaced with Cairo
 2. ~~Implement proper line segments~~ — done via Cairo anti-aliased stroke
 3. ~~Verify full 1024×768 screen usage~~ — done
-4. Add user-adjustable speed control (phase increment `t += 0.05`)
+4. ~~Remove FPS counter print once rendering is confirmed smooth~~ — done
 5. Adaptive display — detect dominant frequency and adjust sample window/zoom so the figure looks good across 20Hz–20kHz
 
-### Performance
-5. Remove FPS counter print once rendering is confirmed smooth
-6. Verify 24 FPS maintained with real SPI data
-
 ### SPI / Data
-7. Wire Blue Pill to SPI CE0 (GPIO 8) and verify loopback test sketch works
-8. Implement STM32 dual ADC + DMA firmware
-9. Implement STM32 SPI slave DMA TX (send XY buffers every ~41ms)
-10. Replace dummy Lissajous data with live SPI reads from Blue Pill
+6. ~~Wire Blue Pill to SPI CE0 (GPIO 8) and verify loopback test sketch works~~ — done; 10/10 PASS at 16 MHz
+7. ~~Implement STM32 dual ADC + DMA firmware~~ — done; spi_xy_adc.ino v1.0.0
+8. ~~Implement STM32 SPI slave DMA TX (send XY buffers every ~41ms)~~ — done
+9. ~~Replace dummy Lissajous data with live SPI reads from Blue Pill~~ — done; 24 FPS confirmed with dummy data; real ADC firmware written, pending hardware
 
 ### Analog Front-End
-11. Build MCP6022 buffering/biasing/gain circuit
-12. Test signal levels and adjust gain/PC volume for best dynamic range
+10. Build MCP6022 buffering/biasing/gain circuit
+11. Test signal levels and adjust gain/PC volume for best dynamic range
 
 ### Polish
-13. Auto-start visualiser on boot
-14. Clean up config.txt (remove unused lines)
-15. ~~Update setup.sh to reflect Pi 3B as primary target~~ — done
-16. Add features: persistence/fading, trigger, scale, grid options
-17. Rotary encoder controls: Speed, Brightness, Persistence, Focus (trace sharpness/glow)
+12. Auto-start visualiser on boot
+13. Clean up config.txt (remove unused lines)
+14. ~~Update setup.sh to reflect Pi 3B as primary target~~ — done
+15. Add features: persistence/fading, trigger, scale, grid options
+16. Rotary encoder controls: Speed, Brightness, Persistence, Focus (trace sharpness/glow)
 
 ## Build Log
 
@@ -151,13 +147,21 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 - Component list confirmed: 2× 100 nF input coupling caps, 2× 680 Ω series resistors, shared 10k/10k bias divider + 100 nF decoupling, 100 nF MCP6022 supply decoupling, 2× 100 Ω output resistors to STM32 ADC
 - Pi 3B eth0 static IP set to 192.168.0.100 via NetworkManager; MAC b8:27:eb:53:fc:5a fixed in hardware — assigned static lease on router
 - SPI link test sketches written: `STM_FIRMWARE/spi_loopback_ce0/` (Blue Pill) + `PI_SETUP/spi_link_test.py` (Pi); test file transferred to Pi
+- SPI link test result: 10/10 PASS at 16 MHz; polling TX failed at 16 MHz — DMA TX+RX required
+- `spi_xy_dummy.ino` v0.0.2 flashed: LUT-based animated Lissajous via SPI1 slave DMA, 1024 XY pairs per frame
+- `visualiser.py` reading live STM32 dummy data via SPI: 24 FPS confirmed on HDMI
+- Consolidated to single production app: all test/demo/dummy files removed
+  - `PI_SETUP/visualiser.py`: SPI code inlined, self-contained
+  - `STM_FIRMWARE/spi_xy_adc/spi_xy_adc.ino` v1.0.0: dual regular ADC (TIM3 96 kS/s trigger), ADC1 DMA 32-bit (both channels from ADC1->DR), SPI1 slave DMA TX
+  - Real ADC firmware ready; awaiting MCP6022 analog front-end build
 
 ### Notes
-- STM32 SPI slave sketch uses direct register setup (STM32duino SPI slave API unreliable) — see `STM_FIRMWARE/`
+- STM32 SPI slave uses direct register access throughout (STM32duino SPI slave API unreliable at 16 MHz)
+- Polling SPI slave TX byte-by-byte always fails at 16 MHz — DMA TX+RX mandatory
 
 ---
 
-**Project Status**: Active Build  
+**Project Status**: Active Build — firmware complete, analog hardware build next  
 **Last Updated**: April 2026
 
 This document contains all key decisions and specifications discussed so far. Feel free to expand it with code snippets, schematics, or test results as you build.
