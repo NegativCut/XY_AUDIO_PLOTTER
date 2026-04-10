@@ -33,3 +33,22 @@ def read_xy():
 def close_spi():
     if _spi:
         _spi.close()
+
+if __name__ == '__main__':
+    import sys
+    import time
+    N = int(sys.argv[1]) if len(sys.argv) > 1 else 24
+    open_spi()
+    print(f"SPI XY read test — {N} frames, CE0, 16 MHz, mode 0")
+    try:
+        for i in range(1, N + 1):
+            result = read_xy()
+            if result is None:
+                print(f"[{i:3}/{N}] FAIL  bad read length")
+            else:
+                xi, yi = result
+                print(f"[{i:3}/{N}] OK    X min={xi.min():.0f} max={xi.max():.0f} "
+                      f"Y min={yi.min():.0f} max={yi.max():.0f}")
+            time.sleep(1 / 24)
+    finally:
+        close_spi()

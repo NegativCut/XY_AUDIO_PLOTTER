@@ -4,23 +4,13 @@
 
 import cairo
 import numpy as np
-import math
 import time
 import sys
+import spi_xy_read
 
 WIDTH, HEIGHT = 1024, 768
 FPS = 24
-SAMPLES = 1024
 FB = '/dev/fb0'
-SPEED = 0.05  # phase increment per frame
-
-def generate_lissajous(t, a=1, b=2):
-    angles = np.linspace(0, 2 * math.pi, SAMPLES)
-    x = np.sin(a * angles + t)
-    y = np.sin(b * angles)
-    px = (x + 1) / 2 * (WIDTH - 1)
-    py = (y + 1) / 2 * (HEIGHT - 1)
-    return px, py
 
 def draw_trace(ctx, px, py):
     ctx.move_to(px[0], py[0])
@@ -34,6 +24,8 @@ def main():
     except Exception as e:
         print(f"Error opening framebuffer: {e}")
         return
+
+    spi_xy_read.open_spi()
 
     with open('/dev/tty1', 'w') as tty:
         tty.write("\033[?25l")
@@ -61,14 +53,17 @@ def main():
             ctx.set_operator(cairo.OPERATOR_OVER)
             ctx.set_source_rgba(0, 1, 0, 1)
 
-            px, py = generate_lissajous(t)
-            draw_trace(ctx, px, py)
+            result = spi_xy_read.read_xy()
+            if result is not None:
+                px, py = result
+                px = px / 4095.0 * (WIDTH - 1)
+                py = py / 4095.0 * (HEIGHT - 1)
+                draw_trace(ctx, px, py)
 
             fb.seek(0)
             fb.write(surface.get_data())
             fb.flush()
 
-            t += SPEED
             frame_count += 1
             elapsed = time.perf_counter() - t0
             if time.perf_counter() - fps_timer >= 1.0:
@@ -92,6 +87,7 @@ def main():
             fb.close()
         except Exception:
             pass
+        spi_xy_read.close_spi()
         try:
             with open('/dev/tty1', 'w') as tty:
                 tty.write("\033[?25h\033[2J\033[H")
