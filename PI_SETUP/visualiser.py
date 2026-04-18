@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # XY Audio Lissajous visualiser
 # Pi 3B, HDMI 1024x768, Cairo renderer, 24 FPS
-# Reads 1024 XY pairs (4096 bytes) per frame from STM32 via SPI CE0 at 16 MHz
-# Format: [X_hi, X_lo, Y_hi, Y_lo] x 1024  big-endian uint16, 12-bit (0-4095)
+# Reads 512 XY pairs (2048 bytes) per frame from STM32 via SPI CE0 at 16 MHz
+# Format: [X_hi, X_lo, Y_hi, Y_lo] x 512  big-endian uint16, 12-bit (0-4095)
 
 import cairo
 import numpy as np
@@ -14,8 +14,24 @@ FPS = 24
 FB = '/dev/fb0'
 SAMPLES = 512
 BUF_SIZE = SAMPLES * 4   # bytes
+N_BANDS = 16             # colour quantisation bands
 
 _spi = None
+
+# Colour ramp: blue (slow/bass) -> green (mids) -> white (fast/highs)
+def _make_colours(n):
+    colours = []
+    for i in range(n):
+        v = i / (n - 1)
+        if v < 0.5:
+            t = v * 2
+            colours.append((0.0, t, 1.0 - t, 1.0))
+        else:
+            t = (v - 0.5) * 2
+            colours.append((t, 1.0, t, 1.0))
+    return colours
+
+COLOURS = _make_colours(N_BANDS)
 
 def open_spi():
     global _spi
@@ -37,10 +53,24 @@ def close_spi():
         _spi.close()
 
 def draw_trace(ctx, px, py):
-    ctx.move_to(px[0], py[0])
-    for i in range(1, len(px)):
-        ctx.line_to(px[i], py[i])
-    ctx.stroke()
+    dx = np.diff(px)
+    dy = np.diff(py)
+    vel = np.sqrt(dx*dx + dy*dy)
+
+    vmax = vel.max()
+    vel_norm = vel / vmax if vmax > 0 else vel
+
+    bands = (vel_norm * (N_BANDS - 1)).astype(int).clip(0, N_BANDS - 1)
+
+    for b in range(N_BANDS):
+        indices = np.where(bands == b)[0]
+        if len(indices) == 0:
+            continue
+        ctx.set_source_rgba(*COLOURS[b])
+        for i in indices:
+            ctx.move_to(float(px[i]),   float(py[i]))
+            ctx.line_to(float(px[i+1]), float(py[i+1]))
+        ctx.stroke()
 
 def main():
     try:
@@ -74,7 +104,6 @@ def main():
             ctx.set_operator(cairo.OPERATOR_CLEAR)
             ctx.paint()
             ctx.set_operator(cairo.OPERATOR_OVER)
-            ctx.set_source_rgba(0, 1, 0, 1)
 
             result = read_xy()
             if result is not None:
