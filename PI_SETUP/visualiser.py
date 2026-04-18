@@ -107,7 +107,8 @@ def main():
         while True:
             t0 = time.perf_counter()
 
-            ctx.set_operator(cairo.OPERATOR_CLEAR)
+            ctx.set_operator(cairo.OPERATOR_SOURCE)
+            ctx.set_source_rgba(0.15, 0, 0, 1)  # dark red background — confirms new file
             ctx.paint()
             ctx.set_operator(cairo.OPERATOR_OVER)
 
