@@ -18,17 +18,28 @@ N_BANDS = 16             # colour quantisation bands
 
 _spi = None
 
-# Colour ramp: blue (slow/bass) -> green (mids) -> white (fast/highs)
+# Colour ramp: blue -> cyan -> green -> yellow -> white
 def _make_colours(n):
     colours = []
+    stops = [
+        (0.00, (0.0, 0.0, 1.0)),  # blue
+        (0.25, (0.0, 1.0, 1.0)),  # cyan
+        (0.50, (0.0, 1.0, 0.0)),  # green
+        (0.75, (1.0, 1.0, 0.0)),  # yellow
+        (1.00, (1.0, 1.0, 1.0)),  # white
+    ]
     for i in range(n):
         v = i / (n - 1)
-        if v < 0.5:
-            t = v * 2
-            colours.append((0.0, t, 1.0 - t, 1.0))
-        else:
-            t = (v - 0.5) * 2
-            colours.append((t, 1.0, t, 1.0))
+        for j in range(len(stops) - 1):
+            v0, c0 = stops[j]
+            v1, c1 = stops[j + 1]
+            if v0 <= v <= v1:
+                t = (v - v0) / (v1 - v0)
+                r = c0[0] + t * (c1[0] - c0[0])
+                g = c0[1] + t * (c1[1] - c0[1])
+                b = c0[2] + t * (c1[2] - c0[2])
+                colours.append((r, g, b, 1.0))
+                break
     return colours
 
 COLOURS = _make_colours(N_BANDS)
@@ -58,7 +69,7 @@ def draw_trace(ctx, px, py):
     vel = np.sqrt(dx*dx + dy*dy)
 
     vmax = vel.max()
-    vel_norm = vel / vmax if vmax > 0 else vel
+    vel_norm = np.sqrt(vel / vmax) if vmax > 0 else vel  # sqrt spreads low-velocity bands
 
     bands = (vel_norm * (N_BANDS - 1)).astype(int).clip(0, N_BANDS - 1)
 
