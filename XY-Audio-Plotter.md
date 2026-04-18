@@ -156,10 +156,15 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
   - `PI_SETUP/visualiser.py`: SPI code inlined, self-contained
   - `STM_FIRMWARE/spi_xy_adc/spi_xy_adc.ino` v1.0.0: dual regular ADC (TIM3 96 kS/s trigger), ADC1 DMA 32-bit (both channels from ADC1->DR), SPI1 slave DMA TX
   - Real ADC firmware ready; awaiting MCP6022 analog front-end build
-- MCP6022 AFE schematic drawn (`STM_MCP6022_AFE.pdf`): dual-channel non-inverting amp, 3.3V single supply, gain 1.68× (Rf=6.8kΩ, Rg=10kΩ), 680Ω tap resistors, 10k/10k shared bias divider, 100Ω output series resistors, passive stereo passthrough (P1→P2)
+- MCP6022 AFE schematic drawn (`STM_MCP6022_AFE.pdf`): dual-channel non-inverting amp, 3.3V single supply, 680Ω tap resistors, 10k/10k shared bias divider, 100Ω output series resistors, passive stereo passthrough (P1→P2)
 - PCB routing: L-OUT→PA1, R-OUT→PA0 (swapped vs. spec) for via-free analog section; firmware channel labels deferred until post-functionality testing
 - Input coupling caps omitted for initial bench testing; to be added if DC offset causes problems
 - R4/R11 (1kΩ) confirmed as bias feed resistors (divider midpoint → non-inverting input); gain unaffected
+- LTspice simulation (`XY-AFE.asc`): single-channel AFE verified; OP191 used as MCP6022 substitute
+  - Bias buffer: U2 wired as unity-gain follower driving 1.65V to non-inverting input via R7 (1kΩ) — lower source impedance than passive divider, design improvement over original spec
+  - Gain analysis: op-amp closed-loop gain = 1 + Rf/Rg = 1 + 10k/6.8k = 2.47×; R6/R7 input divider attenuates signal by R7/(R6+R7) = 1000/1680 = 0.595×; **net gain = 0.595 × 2.47 = ~1.47×**
+  - DC: V_noninv = 1.65 × R6/(R6+R7) = 0.668V → output DC = 0.668 × 2.47 = 1.65V ✓
+  - At 1.05V peak input (worst-case line-out): output swings ±1.54V around 1.65V → max 3.19V, min 0.11V — no clipping ✓
 
 ### Notes
 - STM32 SPI slave uses direct register access throughout (STM32duino SPI slave API unreliable at 16 MHz)
@@ -167,7 +172,7 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 
 ---
 
-**Project Status**: Active Build — schematic complete, bench testing analog signal next  
+**Project Status**: Active Build — AFE schematic and simulation complete, bench signal verification next  
 **Last Updated**: April 2026
 
 This document contains all key decisions and specifications discussed so far. Feel free to expand it with code snippets, schematics, or test results as you build.
