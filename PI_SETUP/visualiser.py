@@ -64,8 +64,12 @@ def close_spi():
         _spi.close()
 
 def draw_trace(ctx, px, py):
-    n = len(px) - 1
-    bands = (np.arange(n) * (N_BANDS - 1) / max(n - 1, 1)).astype(int).clip(0, N_BANDS - 1)
+    dx = np.diff(px)
+    dy = np.diff(py)
+    vel = np.sqrt(dx*dx + dy*dy)
+    vmax = vel.max()
+    vel_norm = np.sqrt(vel / vmax) if vmax > 0 else vel
+    bands = (vel_norm * (N_BANDS - 1)).astype(int).clip(0, N_BANDS - 1)
 
     for b in range(N_BANDS):
         indices = np.where(bands == b)[0]
@@ -107,8 +111,7 @@ def main():
         while True:
             t0 = time.perf_counter()
 
-            ctx.set_operator(cairo.OPERATOR_SOURCE)
-            ctx.set_source_rgba(0.15, 0, 0, 1)  # dark red background — confirms new file
+            ctx.set_operator(cairo.OPERATOR_CLEAR)
             ctx.paint()
             ctx.set_operator(cairo.OPERATOR_OVER)
 
