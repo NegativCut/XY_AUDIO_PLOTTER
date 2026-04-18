@@ -102,8 +102,10 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 9. ~~Replace dummy Lissajous data with live SPI reads from Blue Pill~~ — done; 24 FPS confirmed with dummy data; real ADC firmware written, pending hardware
 
 ### Analog Front-End
-10. Build MCP6022 buffering/biasing/gain circuit
-11. Test signal levels and adjust gain/PC volume for best dynamic range
+10. ~~Draw MCP6022 AFE schematic~~ — done; `STM_MCP6022_AFE.pdf`
+11. Scope PC headphone output to verify signal within expected bounds
+12. Build MCP6022 buffering/biasing/gain circuit
+13. Test signal levels and adjust gain/PC volume for best dynamic range
 
 ### Polish
 12. Auto-start visualiser on boot
@@ -154,6 +156,10 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
   - `PI_SETUP/visualiser.py`: SPI code inlined, self-contained
   - `STM_FIRMWARE/spi_xy_adc/spi_xy_adc.ino` v1.0.0: dual regular ADC (TIM3 96 kS/s trigger), ADC1 DMA 32-bit (both channels from ADC1->DR), SPI1 slave DMA TX
   - Real ADC firmware ready; awaiting MCP6022 analog front-end build
+- MCP6022 AFE schematic drawn (`STM_MCP6022_AFE.pdf`): dual-channel non-inverting amp, 3.3V single supply, gain 1.68× (Rf=6.8kΩ, Rg=10kΩ), 680Ω tap resistors, 10k/10k shared bias divider, 100Ω output series resistors, passive stereo passthrough (P1→P2)
+- PCB routing: L-OUT→PA1, R-OUT→PA0 (swapped vs. spec) for via-free analog section; firmware channel labels deferred until post-functionality testing
+- Input coupling caps omitted for initial bench testing; to be added if DC offset causes problems
+- R4/R11 (1kΩ) confirmed as bias feed resistors (divider midpoint → non-inverting input); gain unaffected
 
 ### Notes
 - STM32 SPI slave uses direct register access throughout (STM32duino SPI slave API unreliable at 16 MHz)
@@ -161,7 +167,7 @@ Add 22–33 Ω series resistors on SCLK and MOSI (Pi side) for clean edges at 16
 
 ---
 
-**Project Status**: Active Build — firmware complete, analog hardware build next  
+**Project Status**: Active Build — schematic complete, bench testing analog signal next  
 **Last Updated**: April 2026
 
 This document contains all key decisions and specifications discussed so far. Feel free to expand it with code snippets, schematics, or test results as you build.
