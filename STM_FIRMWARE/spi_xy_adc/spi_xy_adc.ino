@@ -2,17 +2,17 @@
 // Audio input: PA0 = Left/X (ADC1 Ch0), PA1 = Right/Y (ADC2 Ch1)
 // SPI:         PA4 = NSS, PA5 = SCK, PA6 = MISO, PA7 = MOSI
 //
-// Collects 1024 simultaneous XY pairs via dual regular ADC mode,
-// triggered by TIM3 at 96 kS/s. Sends 4096 bytes per frame via SPI1 slave DMA.
-// Format: [X_hi, X_lo, Y_hi, Y_lo] x 1024  big-endian uint16, 12-bit (0-4095)
+// Collects 512 simultaneous XY pairs via dual regular ADC mode,
+// triggered by TIM3 at 96 kS/s. Sends 2048 bytes per frame via SPI1 slave DMA.
+// Format: [X_hi, X_lo, Y_hi, Y_lo] x 512  big-endian uint16, 12-bit (0-4095)
 //
-// Pi: spidev CE0 (GPIO 8), 16 MHz, mode 0, read 4096 bytes per frame.
+// Pi: spidev CE0 (GPIO 8), 16 MHz, mode 0, read 2048 bytes per frame.
 // Bias: 1.65 V midpoint = ADC ~2048 = screen centre. No offset subtraction needed.
 //
-// Version: 1.0.0
+// Version: 1.1.0
 
 #define LED_PIN   PC13
-#define SAMPLES   1024
+#define SAMPLES   512
 #define BUF_SIZE  (SAMPLES * 4)   // bytes: [X_hi, X_lo, Y_hi, Y_lo] per pair
 
 // ADC1->DR in dual mode: bits [15:0] = ADC1 (X/Left), bits [31:16] = ADC2 (Y/Right)

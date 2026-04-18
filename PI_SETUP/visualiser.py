@@ -12,7 +12,7 @@ import time
 WIDTH, HEIGHT = 1024, 768
 FPS = 24
 FB = '/dev/fb0'
-SAMPLES = 1024
+SAMPLES = 512
 BUF_SIZE = SAMPLES * 4   # bytes
 
 _spi = None
