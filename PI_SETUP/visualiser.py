@@ -64,20 +64,15 @@ def close_spi():
         _spi.close()
 
 def draw_trace(ctx, px, py):
-    dx = np.diff(px)
-    dy = np.diff(py)
-    vel = np.sqrt(dx*dx + dy*dy)
-
-    vmax = vel.max()
-    vel_norm = np.sqrt(vel / vmax) if vmax > 0 else vel  # sqrt spreads low-velocity bands
-
-    bands = (vel_norm * (N_BANDS - 1)).astype(int).clip(0, N_BANDS - 1)
+    n = len(px) - 1
+    bands = (np.arange(n) * (N_BANDS - 1) / max(n - 1, 1)).astype(int).clip(0, N_BANDS - 1)
 
     for b in range(N_BANDS):
         indices = np.where(bands == b)[0]
         if len(indices) == 0:
             continue
         ctx.set_source_rgba(*COLOURS[b])
+        ctx.new_path()
         for i in indices:
             ctx.move_to(float(px[i]),   float(py[i]))
             ctx.line_to(float(px[i+1]), float(py[i+1]))
