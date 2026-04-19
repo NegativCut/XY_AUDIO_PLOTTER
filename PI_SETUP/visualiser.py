@@ -48,7 +48,7 @@ def open_spi():
     global _spi
     _spi = spidev.SpiDev()
     _spi.open(0, 0)               # bus 0, CE0 (GPIO 8)
-    _spi.max_speed_hz = 16_000_000
+    _spi.max_speed_hz = 20_000_000
     _spi.mode = 0
     _spi.bits_per_word = 8
 
