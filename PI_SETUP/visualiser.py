@@ -16,8 +16,8 @@ SAMPLES = 512
 BUF_SIZE = SAMPLES * 4   # bytes
 N_BANDS = 16             # colour quantisation bands
 PERSISTENCE = 0.15       # alpha of black fade overlay per frame (higher = faster decay)
-SCALE_SMOOTH = 0.995     # exponential smoothing for auto-scale (higher = slower response)
-MARGIN = 0.75            # fraction of screen to fill at full scale
+SCALE_DECAY = 0.995      # how fast the scale shrinks after a loud peak (higher = slower decay)
+MARGIN = 0.80            # fraction of screen to fill at full scale
 
 _spi = None
 _scale = 1.0
@@ -74,9 +74,10 @@ def auto_scale(px, py):
     cy = (py.max() + py.min()) / 2
     r  = max(px.max() - px.min(), py.max() - py.min(), 1.0)
     target = min(WIDTH, HEIGHT) * MARGIN / r
-    _scale = _scale * SCALE_SMOOTH + target * (1 - SCALE_SMOOTH)
-    _cx    = _cx    * SCALE_SMOOTH + cx     * (1 - SCALE_SMOOTH)
-    _cy    = _cy    * SCALE_SMOOTH + cy     * (1 - SCALE_SMOOTH)
+    # Snap up immediately to new peaks, decay slowly after
+    _scale = min(_scale * SCALE_DECAY, target) if target < _scale else target
+    _cx    = _cx * 0.95 + cx * 0.05
+    _cy    = _cy * 0.95 + cy * 0.05
     return (px - _cx) * _scale + WIDTH  / 2, \
            (py - _cy) * _scale + HEIGHT / 2
 
