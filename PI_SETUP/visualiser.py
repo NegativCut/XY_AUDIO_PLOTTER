@@ -15,6 +15,7 @@ FB = '/dev/fb0'
 SAMPLES = 512
 BUF_SIZE = SAMPLES * 4   # bytes
 N_BANDS = 16             # colour quantisation bands
+PERSISTENCE = 0.15       # alpha of black fade overlay per frame (higher = faster decay)
 
 _spi = None
 
@@ -111,9 +112,9 @@ def main():
         while True:
             t0 = time.perf_counter()
 
-            ctx.set_operator(cairo.OPERATOR_CLEAR)
-            ctx.paint()
             ctx.set_operator(cairo.OPERATOR_OVER)
+            ctx.set_source_rgba(0, 0, 0, PERSISTENCE)
+            ctx.paint()
 
             result = read_xy()
             if result is not None:
