@@ -16,8 +16,8 @@ SAMPLES = 512
 BUF_SIZE = SAMPLES * 4   # bytes
 N_BANDS = 16             # colour quantisation bands
 PERSISTENCE = 0.15       # alpha of black fade overlay per frame (higher = faster decay)
-SCALE_SMOOTH = 0.97      # exponential smoothing for auto-scale (higher = slower response)
-MARGIN = 0.90            # fraction of screen to fill at full scale
+SCALE_SMOOTH = 0.995     # exponential smoothing for auto-scale (higher = slower response)
+MARGIN = 0.75            # fraction of screen to fill at full scale
 
 _spi = None
 _scale = 1.0
