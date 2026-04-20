@@ -16,8 +16,13 @@ SAMPLES = 512
 BUF_SIZE = SAMPLES * 4   # bytes
 N_BANDS = 16             # colour quantisation bands
 PERSISTENCE = 0.15       # alpha of black fade overlay per frame (higher = faster decay)
+SCALE_SMOOTH = 0.97      # exponential smoothing for auto-scale (higher = slower response)
+MARGIN = 0.90            # fraction of screen to fill at full scale
 
 _spi = None
+_scale = 1.0
+_cx = 2047.5
+_cy = 2047.5
 
 # Colour ramp: blue -> cyan -> green -> yellow -> white
 def _make_colours(n):
@@ -62,6 +67,18 @@ def read_xy():
 def close_spi():
     if _spi:
         _spi.close()
+
+def auto_scale(px, py):
+    global _scale, _cx, _cy
+    cx = (px.max() + px.min()) / 2
+    cy = (py.max() + py.min()) / 2
+    r  = max(px.max() - px.min(), py.max() - py.min(), 1.0)
+    target = min(WIDTH, HEIGHT) * MARGIN / r
+    _scale = _scale * SCALE_SMOOTH + target * (1 - SCALE_SMOOTH)
+    _cx    = _cx    * SCALE_SMOOTH + cx     * (1 - SCALE_SMOOTH)
+    _cy    = _cy    * SCALE_SMOOTH + cy     * (1 - SCALE_SMOOTH)
+    return (px - _cx) * _scale + WIDTH  / 2, \
+           (py - _cy) * _scale + HEIGHT / 2
 
 def draw_trace(ctx, px, py):
     dx = np.diff(px)
@@ -118,8 +135,7 @@ def main():
             result = read_xy()
             if result is not None:
                 px, py = result
-                px = px / 4095.0 * (WIDTH - 1)
-                py = py / 4095.0 * (HEIGHT - 1)
+                px, py = auto_scale(px, py)
                 draw_trace(ctx, px, py)
 
             fb.seek(0)
