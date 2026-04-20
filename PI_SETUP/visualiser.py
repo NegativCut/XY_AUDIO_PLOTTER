@@ -23,11 +23,10 @@ _spi = None
 def _make_colours(n):
     colours = []
     stops = [
-        (0.00, (0.0, 0.0, 1.0)),  # blue
-        (0.25, (0.0, 1.0, 1.0)),  # cyan
-        (0.50, (0.0, 1.0, 0.0)),  # green
-        (0.75, (1.0, 1.0, 0.0)),  # yellow
-        (1.00, (1.0, 1.0, 1.0)),  # white
+        (0.00, (0.4, 0.0, 0.0)),  # deep red
+        (0.33, (1.0, 0.3, 0.0)),  # orange
+        (0.67, (1.0, 0.8, 0.0)),  # amber/yellow
+        (1.00, (1.0, 1.0, 0.9)),  # warm white
     ]
     for i in range(n):
         v = i / (n - 1)
