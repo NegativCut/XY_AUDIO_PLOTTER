@@ -1,0 +1,11 @@
+# Claude Code worktrees
+.claude/worktrees/
+
+# Backup files
+*.bkp
+*.bak
+
+# LTspice generated outputs
+SIMULATION/*.log
+SIMULATION/*.raw
+SIMULATION/*.op.raw
